@@ -1,0 +1,9 @@
+commit-msg:
+  commands:
+    conventional-commit:
+      run: cog verify --file {1}
+
+pre-commit:
+  commands:
+    lint:
+      run: task lint

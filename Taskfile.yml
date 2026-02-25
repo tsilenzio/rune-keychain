@@ -1,0 +1,54 @@
+version: '3'
+
+dotenv: ['.env']
+
+tasks:
+  fmt:
+    desc: Check formatting
+    cmd: cargo fmt --check
+
+  clippy:
+    desc: Run clippy lints
+    cmd: cargo clippy --all-targets --all-features -- -D warnings
+
+  lint:
+    desc: Run fmt check and clippy
+    deps: [fmt, clippy]
+
+  test:
+    desc: Run all tests
+    cmd: cargo test
+
+  check:
+    desc: Run linting and testing
+    cmds:
+      - task: lint
+      - task: test
+
+  build:
+    desc: Build and sign release binary
+    cmds:
+      - cargo build --release
+      - codesign -s "{{.SIGNING_IDENTITY}}" --options runtime target/release/rune-keychain
+    sources:
+      - Cargo.toml
+      - Cargo.lock
+      - src/**/*.rs
+    generates:
+      - target/release/rune-keychain
+    method: timestamp
+
+  verify:
+    desc: Verify code signature
+    deps: [build]
+    cmd: codesign -dvvv target/release/rune-keychain
+
+  run:
+    desc: Build, sign, and run
+    deps: [build]
+    cmd: ./target/release/rune-keychain {{.CLI_ARGS}}
+
+  default:
+    desc: Run linting and testing
+    cmds:
+      - task: check
